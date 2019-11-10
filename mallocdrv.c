@@ -33,7 +33,7 @@
 #define FREE my_free
 
 //You can adjust how many things are allocated
-#define TIMES 1
+#define TIMES 400
 
 //If you want to make times bigger than 512, remove the call to qsort and do something else.
 //Then remove this check.
@@ -121,7 +121,7 @@ void test2() {
         a[i] = rand() % TIMES + 1;
     }
 
-    qsort(a, TIMES, sizeof(int), comp);
+    // qsort(a, TIMES, sizeof(int), comp);
 
     for (i = 0; i < TIMES; i++) {
         printf("%d\n", a[i]);
@@ -146,9 +146,9 @@ int main() {
     test2();
     void *b = sbrk(0);
     printf("brk after  test2: %p\n", b);
-    test1();
-    void *c = sbrk(0);
-    printf("brk after  test1: %p\n", c);
+//     test1();
+//     void *c = sbrk(0);
+//     printf("brk after  test1: %p\n", c);
 
     assert(a == b);
     assert(b == c);

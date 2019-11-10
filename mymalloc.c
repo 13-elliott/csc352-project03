@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <assert.h>
 
+#define BREAK_INVARIANT list_end == NULL \
+    || ((void *) list_end + list_end->size + sizeof(Node) == sbrk(0))
 #define TRUE 1
 #define FALSE 0
 
@@ -15,38 +17,22 @@ typedef struct Node {
 } Node;
 
 void *my_firstfit_malloc(int);
-
 void my_free(void *);
-
 void shrink_brk();
-
 void coalesce(Node *);
-
 bool is_node_in_list(Node *);
-
 void allocate_at_node(Node *, int);
-
 void connect_after(Node *, Node *);
-
 Node *allocate_at_break(int);
-
 Node *firstfit_find(int);
-
 Node *list_start = NULL;
 Node *list_end = NULL;
-
-void *initial = NULL;
-
-#define BREAK_INVARIANT list_end == NULL || (void *) list_end + list_end->size + sizeof(Node) == sbrk(0)
 
 // TODO: missing space??
 void *my_firstfit_malloc(int size) {
     static int times_called = 0;
     times_called++;
     Node *selected;
-    if (initial == NULL) {
-        initial = sbrk(0);
-    }
     if (list_start == NULL) {
         // Make first allocation and return the
         // the address immediately after the Node
@@ -87,8 +73,8 @@ void allocate_at_node(Node *selected, int request_size) {
 }
 
 /*
- * inserts the Node "latter" immediately after the Node "prior"
- * in prior's linked list
+ * inserts the Node "first" immediately after the Node "second"
+ * in first's linked list. if first is the list tail, updates the tail
  */
 void connect_after(Node *first, Node *second) {
     assert(first != NULL);
@@ -102,12 +88,10 @@ void connect_after(Node *first, Node *second) {
         }
     }
     first->next = second;
-
 }
 
 /*
- * initializes the first node of the linked list.
- * init is the initial address of brk as returned by sbrk(n);
+ * TODO
  */
 Node *allocate_at_break(int request_size) {
     Node *new = sbrk(sizeof(Node) + request_size);
@@ -134,32 +118,39 @@ Node *firstfit_find(int size) {
 
 void my_free(void *location) {
     static int called = 0;
-    called++;
-    // assert(location != NULL);
     Node *to_free = location;
+    called++;
     to_free -= 1;
     assert(!to_free->is_free);
+    printf("called %d times\n", called);
+    printf("break: %p\n", sbrk(0));
+    printf("node: %p\nsize: %d\n", to_free, to_free->size);
 
     to_free->is_free = TRUE;
+    assert(BREAK_INVARIANT);
     coalesce(to_free);
+    assert(BREAK_INVARIANT);
     shrink_brk();
     assert(BREAK_INVARIANT);
 }
 
 void coalesce(Node *selected) {
-    return; // TODO: FIX ME!?
+     return; // TODO: FIX ME!?
     Node *prev = selected->prev;
+    Node *next = selected->next;
+
     if (prev != NULL && prev->is_free) {
         prev->size += sizeof(Node) + selected->size;
+        selected->size = 0;
         connect_after(prev, selected->next);
         selected = prev;
     }
     // because the end of the list should never be a free node,
     // selected->next should not be the end of the list
     // and selected->next->next should not be NULL
-    Node *next = selected->next;
     if (next != NULL && next->is_free) {
         selected->size += sizeof(Node) + next->size;
+        next->size = 0;
         connect_after(selected, next->next);
         if (next == list_end) {
             list_end = selected;
@@ -171,10 +162,6 @@ void coalesce(Node *selected) {
  * shrink the brk if the last node is free.
  */
 void shrink_brk() {
-    // keep shrinking the break
-    // until the last node isn't free
-    // (or there are no more nodes)
-    assert(BREAK_INVARIANT);
     while (list_end != NULL && list_end->is_free) {
         Node *old_end = list_end;
         list_end = list_end->prev;
@@ -182,6 +169,7 @@ void shrink_brk() {
         //assert(old_end == NULL || (void *) old_end + sizeof(Node) + old_end->size == sbrk(0));
         // shrink brk
         sbrk(-(old_end->size + sizeof(Node)));
+
         if (list_end == NULL) {
             // then we've just freed the last node
             list_start = NULL;
@@ -189,18 +177,7 @@ void shrink_brk() {
         } else {
             list_end->next = NULL;
         }
+        assert(BREAK_INVARIANT);
     }
-}
-
-// for assertions
-bool is_node_in_list(Node *nd) {
-    Node *curr = list_start;
-    while (curr != NULL) {
-        if (curr == nd) {
-            return TRUE;
-        }
-        curr = curr->next;
-    }
-    return FALSE;
 }
 
