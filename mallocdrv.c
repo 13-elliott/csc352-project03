@@ -33,7 +33,7 @@
 #define FREE my_free
 
 //You can adjust how many things are allocated
-#define TIMES 400
+#define TIMES 500
 
 //If you want to make times bigger than 512, remove the call to qsort and do something else.
 //Then remove this check.
@@ -121,7 +121,8 @@ void test2() {
         a[i] = rand() % TIMES + 1;
     }
 
-    // qsort(a, TIMES, sizeof(int), comp);
+    // I suspect qsort implementation advances the brk
+    qsort(a, TIMES, sizeof(int), comp);
 
     for (i = 0; i < TIMES; i++) {
         printf("%d\n", a[i]);
@@ -139,20 +140,18 @@ int main() {
     //steals some space that it never returns. Yours should always be
     //removing everything it creates and reducing brk).
     void *orig = sbrk(0);
+    void *after;
     printf("original val brk: %p\n", orig);
-    test1();
-    void *a = sbrk(0);
-    printf("brk after  test1: %p\n", a);
-    test2();
-    void *b = sbrk(0);
-    printf("brk after  test2: %p\n", b);
-//     test1();
-//     void *c = sbrk(0);
-//     printf("brk after  test1: %p\n", c);
 
-    assert(a == b);
-    assert(b == c);
-    assert(orig == a);
+    test1();
+    after = sbrk(0);
+    printf("brk after  test1: %p\n", after);
+    assert(orig == after);
+
+    test2();
+    after = sbrk(0);
+    printf("brk after  test2: %p\n", after);
+    assert(orig == after);
 
     return 0;
 }

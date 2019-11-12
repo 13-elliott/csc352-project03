@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#define NDEBUG
 #include <assert.h>
 
 #define TRUE 1
