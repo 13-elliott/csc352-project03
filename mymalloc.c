@@ -64,7 +64,6 @@ Node *allocate_at_break(int request_size) {
     Node *new = sbrk(sizeof(Node) + request_size);
     new->is_free = FALSE;
     new->size = request_size;
-    // TODO: update list_end here?
     return new;
 }
 
