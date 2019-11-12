@@ -78,13 +78,12 @@ void randominsert(struct tree *head, struct tree *new) {
 }
 
 void printtree(struct tree *head) {
-    struct tree *curr = head;
     if (head == NULL)
         return;
 
-    printtree(curr->left);
-    printf("%d\n", curr->data);
-    printtree(curr->right);
+    printtree(head->left);
+    printf("%d\n", head->data);
+    printtree(head->right);
 }
 
 void test1() {
@@ -132,6 +131,48 @@ void test2() {
 
 }
 
+// frees a random leaf node from the tree.
+int randfree(struct tree *head) {
+    if (head == NULL) {}
+    else if (head->left == NULL && head->right == NULL) {
+        FREE(head);
+        return 1;
+    } else if (rand() % 2 == 0 && head->left != NULL) {
+        if (randfree(head->left))
+            head->left = NULL;
+    } else {
+        if (randfree(head->right))
+            head->right = NULL;
+    }
+    return 0;
+}
+
+// modified version of test1 which deallocates two random tree
+// two tree nodes on every 5 iterations.
+void test3() {
+    int i;
+
+    struct tree *head = (struct tree *) MALLOC(sizeof(struct tree));
+    head->data = 0;
+    head->left = NULL;
+    head->right = NULL;
+
+    for (i = 1; i < TIMES; i++) {
+        struct tree *new = (struct tree *) MALLOC(sizeof(struct tree));
+        new->data = i;
+        new->left = NULL;
+        new->right = NULL;
+        randominsert(head, new);
+        if (rand() % 5 == 0) {
+            randfree(head);
+            randfree(head);
+        }
+    }
+
+    printtree(head);
+    freetree(head);
+}
+
 int main() {
     srand((unsigned int) time(NULL));
 
@@ -151,6 +192,11 @@ int main() {
     test2();
     after = sbrk(0);
     printf("brk after  test2: %p\n", after);
+    assert(orig == after);
+
+    test3();
+    after = sbrk(0);
+    printf("brk after  test3: %p\n", after);
     assert(orig == after);
 
     return 0;
