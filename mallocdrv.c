@@ -147,8 +147,8 @@ int randfree(struct tree *head) {
     return 0;
 }
 
-// modified version of test1 which deallocates two random tree
-// two tree nodes on every 5 iterations.
+// modified version of test1 which deallocates two random
+// two leaf nodes after every 5 iterations.
 void test3() {
     int i;
 
