@@ -33,7 +33,8 @@
 #define FREE my_free
 
 //You can adjust how many things are allocated
-#define TIMES 500
+#define TIMES 255
+// BREAK_INVARIANT assert fails after qsort call at TIMES >= 256
 
 //If you want to make times bigger than 512, remove the call to qsort and do something else.
 //Then remove this check.

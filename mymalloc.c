@@ -120,6 +120,9 @@ void my_free(void *location) {
     assert(!to_free->is_free);
 
     to_free->is_free = TRUE;
+    // This assert fails after qsort is called in
+    // mallocdrv.c when TIMES >= 256. Thus I suspect
+    // the given 512 limit is erroneus(?)
     assert(BREAK_INVARIANT);
     coalesce(to_free);
     assert(BREAK_INVARIANT);
@@ -171,7 +174,7 @@ void shrink_brk() {
         // the below doesn't work after running qsort
         // I suspect the implementation thereof might allocate somehow?
         // sbrk(-(old_end->size + sizeof(Node)));
-        // UPDATE: i'm losing brk to qsort at TIMES >= 256
+        // UPDATE: I seem to be losing brk to qsort at TIMES >= 256
     }
 }
 
