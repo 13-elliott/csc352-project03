@@ -133,11 +133,11 @@ Node *allocate_at_break(int request_size) {
 /* Returns the node associated with the first space in which the
  * requested allocation can be fit. returns NULL if no fit can be found.
  */
-Node *firstfit_find(int size) {
+Node *firstfit_find(int request_size) {
     Node *curr = list_start;
     while (curr != NULL) {
-        if (curr->is_free && curr->size > size) {
-            // exits loop to return stmt while curr refers
+        if (curr->is_free && curr->size >= request_size) {
+            // exits loop to the return stmt while curr refers
             // to the desired node
             break;
         }
