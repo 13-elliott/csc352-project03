@@ -34,8 +34,6 @@ Node *list_end = NULL;
  * the address of a memory reigon of the requested size
  */
 void *my_firstfit_malloc(int size) {
-    static int times_called = 0;
-    times_called++;
     Node *selected;
     if (list_start == NULL) {
         // make the first allocation
@@ -154,10 +152,7 @@ Node *firstfit_find(int size) {
  * not already been freed. Behavior is otherwise undefined.
  */
 void my_free(void *location) {
-    static int called = 0;
-    Node *to_free = location;
-    called++;
-    to_free -= 1;
+    Node *to_free = location - sizeof(Node);
     assert(!to_free->is_free);
 
     to_free->is_free = TRUE;
