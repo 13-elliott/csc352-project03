@@ -197,15 +197,17 @@ void shrink_brk() {
         Node *old_end = list_end;
         list_end = list_end->prev;
 
-        // shrink brk
-        sbrk(-(old_end->size + sizeof(Node)));
-
         if (list_end == NULL) {
             // then we've just freed the last node
             list_start = NULL;
         } else {
             list_end->next = NULL;
         }
+
+        brk(old_end);
+        // the below doesn't work after running qsort
+        // I suspect the implementation thereof might allocate somehow?
+        // sbrk(-(old_end->size + sizeof(Node)));
     }
 }
 
