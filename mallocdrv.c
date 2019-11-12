@@ -163,7 +163,7 @@ void test3() {
         new->left = NULL;
         new->right = NULL;
         randominsert(head, new);
-        if (rand() % 5 == 0) {
+        if (i % 5 == 0) {
             randfree(head);
             randfree(head);
         }
