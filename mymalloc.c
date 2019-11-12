@@ -57,6 +57,17 @@ void *my_firstfit_malloc(int size) {
     return selected + 1;
 }
 
+/* Pushes the break forward enough to make the requested allocation.
+ * returns a pointer to a newly created Node (at the previous brk)
+ */
+Node *allocate_at_break(int request_size) {
+    Node *new = sbrk(sizeof(Node) + request_size);
+    new->is_free = FALSE;
+    new->size = request_size;
+    // TODO: update list_end here?
+    return new;
+}
+
 /* Allocates memory using the given free Node. If there is space
  * for another allocation in the space remaining after this request
  * within the selected Node, then such a node is created and inserted
@@ -80,55 +91,6 @@ void allocate_at_node(Node *selected, int request_size) {
         new->size = leftover_space;
         insert_after(selected, new);
     }
-}
-
-/* Inserts the Node "first" immediately after the Node "second"
- * in first's linked list. if first = list_end, updates list_end
- */
-void insert_after(Node *first, Node *second) {
-    assert(first != NULL);
-    if (second != NULL) {
-        second->next = first->next;
-        second->prev = first;
-        if (first == list_end) {
-            list_end = second;
-        } else {
-            first->next->prev = second;
-        }
-    }
-    first->next = second;
-}
-
-/* Removes the given Node from the list, connecting its prev
- * and next Nodes and/or updating list_start and list_end
- * as appropriate.
- */
-void remove_node(Node *to_remove) {
-    Node *prev = to_remove->prev;
-    Node *next = to_remove->next;
-
-    if (prev != NULL) {
-        prev->next = next;
-    } else {
-        list_start = next;
-    }
-
-    if (next != NULL) {
-        next->prev = prev;
-    } else {
-        list_end = prev;
-    }
-}
-
-/* Pushes the break forward enough to make the requested allocation.
- * returns a pointer to a newly created Node (at the previous brk)
- */
-Node *allocate_at_break(int request_size) {
-    Node *new = sbrk(sizeof(Node) + request_size);
-    new->is_free = FALSE;
-    new->size = request_size;
-    // TODO: update list_end here?
-    return new;
 }
 
 /* Returns the node associated with the first space in which the
@@ -163,7 +125,6 @@ void my_free(void *location) {
     shrink_brk();
     assert(BREAK_INVARIANT);
 }
-
 
 /* Considers the the given Node and the Nodes immediately
  * before and after it in the list. If more than one of those
@@ -212,3 +173,40 @@ void shrink_brk() {
     }
 }
 
+/* Inserts the Node "first" immediately after the Node "second"
+ * in first's linked list. if first = list_end, updates list_end
+ */
+void insert_after(Node *first, Node *second) {
+    assert(first != NULL);
+    if (second != NULL) {
+        second->next = first->next;
+        second->prev = first;
+        if (first == list_end) {
+            list_end = second;
+        } else {
+            first->next->prev = second;
+        }
+    }
+    first->next = second;
+}
+
+/* Removes the given Node from the list, connecting its prev
+ * and next Nodes and/or updating list_start and list_end
+ * as appropriate.
+ */
+void remove_node(Node *to_remove) {
+    Node *prev = to_remove->prev;
+    Node *next = to_remove->next;
+
+    if (prev != NULL) {
+        prev->next = next;
+    } else {
+        list_start = next;
+    }
+
+    if (next != NULL) {
+        next->prev = prev;
+    } else {
+        list_end = prev;
+    }
+}
