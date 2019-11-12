@@ -5,8 +5,8 @@
 
 #define TRUE 1
 #define FALSE 0
-#define BREAK_INVARIANT list_end == NULL \
-    || ((void *) list_end + list_end->size + sizeof(Node) == sbrk(0))
+#define BREAK_INVARIANT ltail == NULL \
+    || ((void *) ltail + ltail->size + sizeof(Node) == sbrk(0))
 
 typedef int bool;
 
@@ -27,8 +27,10 @@ void coalesce(Node *);
 void shrink_brk();
 void insert_after(Node *, Node *);
 void remove_node(Node *);
-Node *list_start = NULL;
-Node *list_end = NULL;
+
+// global vars, head and tail of the list
+Node *lhead = NULL;
+Node *ltail = NULL;
 
 /* My implementation of stdlib's malloc using the "firstfit" algorithm.
  * Allocates memory of the given size (plus sizeof(Node)) and returns
@@ -36,18 +38,18 @@ Node *list_end = NULL;
  */
 void *my_firstfit_malloc(int size) {
     Node *selected;
-    if (list_start == NULL) {
+    if (lhead == NULL) {
         // make the first allocation
         selected = allocate_at_break(size);
         selected->prev = selected->next = NULL;
-        list_start = list_end = selected;
+        lhead = ltail = selected;
     } else {
         // search for a fit
         selected = firstfit_find(size);
         if (selected == NULL) {
             // if no fit found, push the brk forward
             selected = allocate_at_break(size);
-            insert_after(list_end, selected);
+            insert_after(ltail, selected);
         } else {
             allocate_at_node(selected, size);
         }
@@ -96,7 +98,7 @@ void allocate_at_node(Node *selected, int request_size) {
  * requested allocation can be fit. returns NULL if no fit can be found.
  */
 Node *firstfit_find(int request_size) {
-    Node *curr = list_start;
+    Node *curr = lhead;
     while (curr != NULL) {
         if (curr->is_free && curr->size >= request_size) {
             // exits loop to the return stmt while curr refers
@@ -148,40 +150,41 @@ void coalesce(Node *selected) {
     }
 }
 
-/* If list_end is a free Node, sets list_end to list_end's previous,
- * removes the previous list_end from the list, and sets the break
+/* If ltail is a free Node, sets ltail to ltail's previous,
+ * removes the previous ltail from the list, and sets the break
  * to the start of the address that was just removed. If there was
- * only one Node in the list, then list_start is also reset to NULL.
+ * only one Node in the list, then lhead is also reset to NULL.
  */
 void shrink_brk() {
-    if (list_end->is_free) {
-        Node *old_end = list_end;
-        list_end = list_end->prev;
+    if (ltail->is_free) {
+        Node *old_end = ltail;
+        ltail = ltail->prev;
 
-        if (list_end == NULL) {
+        if (ltail == NULL) {
             // then we've just freed the last node
-            list_start = NULL;
+            lhead = NULL;
         } else {
-            list_end->next = NULL;
+            ltail->next = NULL;
         }
 
         brk(old_end);
         // the below doesn't work after running qsort
         // I suspect the implementation thereof might allocate somehow?
         // sbrk(-(old_end->size + sizeof(Node)));
+        // UPDATE: i'm losing brk to qsort at TIMES >= 256
     }
 }
 
 /* Inserts the Node "first" immediately after the Node "second"
- * in first's linked list. if first = list_end, updates list_end
+ * in first's linked list. if first = ltail, updates ltail
  */
 void insert_after(Node *first, Node *second) {
     assert(first != NULL);
     if (second != NULL) {
         second->next = first->next;
         second->prev = first;
-        if (first == list_end) {
-            list_end = second;
+        if (first == ltail) {
+            ltail = second;
         } else {
             first->next->prev = second;
         }
@@ -190,7 +193,7 @@ void insert_after(Node *first, Node *second) {
 }
 
 /* Removes the given Node from the list, connecting its prev
- * and next Nodes and/or updating list_start and list_end
+ * and next Nodes and/or updating lhead and ltail
  * as appropriate.
  */
 void remove_node(Node *to_remove) {
@@ -200,12 +203,12 @@ void remove_node(Node *to_remove) {
     if (prev != NULL) {
         prev->next = next;
     } else {
-        list_start = next;
+        lhead = next;
     }
 
     if (next != NULL) {
         next->prev = prev;
     } else {
-        list_end = prev;
+        ltail = prev;
     }
 }
